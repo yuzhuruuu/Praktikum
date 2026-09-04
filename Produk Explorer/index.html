@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<!--  <meta charset="UTF-8" /> -->
+<!-- <meta name="viewport" content="width=device-width, initial-scale=1.0" /> -->
+  <title>Product Explorer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Katalog Produk</h1>
+    <p class="subtitle">Jelajahi produk</p>
+  </header>
+
+  <main class="container">
+    <section class="toolbar">
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Cari produk berdasarkan nama..."
+      />
+
+      <select id="category-filter">
+        <option value="all">Semua Kategori</option>
+      </select>
+
+      <button id="sort-button">Urutkan Harga: Termurah ➜ Termahal</button>
+    </section>
+
+    <!-- Statistik -->
+    <section class="stats">
+      <span id="product-count">Total produk ditampilkan: 0</span>
+    </section>
+
+    <!-- Wadah produk -->
+    <div id="product-list" class="grid"></div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
