@@ -1,92 +1,116 @@
-// LEVEL 1 - DASAR JAVASCRIPT
+// PRODUCT EXPLORER 
 
-const productName = "Laptop Asus ROG";
-let price = 15000000;
-let isAvailable = true;
+// State global
+let products = [];       
+let currentView = [];     
+let sortAscending = true; 
 
-let discount = 500000;
-let finalPrice = price - discount;
-
-console.log("Nama Produk:", productName);
-console.log("Harga:", price);
-console.log("Diskon:", discount);
-console.log("Harga Final:", finalPrice);
-
-if (finalPrice > 10000000) {
-    console.log("Kategori: Barang Mewah");
-} else {
-    console.log("Kategori: Barang Standar");
-}
-
-// LEVEL 2 - ARRAY & OBJECT
-
-let products = [];
-
-async function fetchProducts() {
-  try {
-    console.log("Memuat data produk...");
-    const response = await fetch("https://dummyjson.com/products?limit=100");
-    const data = await response.json();
-    products = data.products;
-    console.log("Data produk berhasil dimuat:", products);
-    renderProducts(products);
-  } catch (error) {
-    console.log("Gagal memuat data produk:", error);
-  }
-};
-
-fetchProducts();
-
-// Filter
-const cheapProducts = products.filter(
-    product => product.price < 10000000
-);
-
-console.log(cheapProducts);
-
-
-// Map
-const priceList = products.map(
-    product => "Rp " + product.price
-);
-
-console.log(priceList);
-
-
-// LEVEL 3 - DOM MANIPULATION
 
 const container = document.getElementById("product-list");
-
-// LEVEL 4 - SEARCH
-
 const searchInput = document.getElementById("search-input");
+const categoryFilter = document.getElementById("category-filter");
+const sortButton = document.getElementById("sort-button");
+const productCountEl = document.getElementById("product-count");
 
-searchInput.addEventListener("input", (event) => {
-    const keyword = event.target.value.toLowerCase();
+// 1. FETCH DATA (Async/Await + Fetch API)
+async function fetchProducts() {
+  container.innerHTML = `<p class="loading-text"> Sedang memuat data...</p>`;
 
-    const filteredProducts = products.filter(product =>
-        product.title.toLowerCase().includes(keyword)
-    );
+  try {
+    const response = await fetch("https://dummyjson.com/products?limit=100");
+    const data = await response.json();
 
-    renderProducts(filteredProducts);
-});
+    products = data.products;
+    currentView = products;
 
-// LEVEL 5 - ARROW FUNCTION & DESTRUCTURING
+    populateCategoryOptions(products);
+    renderProducts(currentView);
+  } catch (error) {
+    console.error("Wah, gagal mengambil data nih:", error);
+    container.innerHTML = `<p class="loading-text"> Gagal memuat data. Coba periksa koneksi internetmu.</p>`;
+  }
+}
 
+// 2. RENDER PRODUK (Arrow Function + Object Destructuring)
 const renderProducts = (dataToRender) => {
-    const htmlContent = dataToRender
-        .map(({ title, price, category }) => {
-            return `
-                <div class="card">
-                    <h3>${title}</h3>
-                    <span class="category">${category}</span>
-                    <p>Rp ${price}</p>
-                </div>
-            `;
-        })
-        .join("");
+  currentView = dataToRender;
 
-    container.innerHTML = htmlContent;
+  if (dataToRender.length === 0) {
+    container.innerHTML = `<p class="empty-text">Produk tidak ditemukan </p>`;
+    updateStats(dataToRender);
+    return;
+  }
+
+  const htmlContent = dataToRender
+    .map(({ title, price, category, thumbnail, description }) => {
+      return `
+        <div class="card">
+          <img src="${thumbnail}" alt="${title}" onerror="this.src='https://via.placeholder.com/220x150?text=No+Image'" />
+          <span class="category">${category}</span>
+          <h3>${title}</h3>
+          <p class="price">Rp ${price.toLocaleString("id-ID")}</p>
+          <p class="description">${description ? description.slice(0, 80) + "..." : ""}</p>
+        </div>
+      `;
+    })
+    .join("");
+
+  container.innerHTML = htmlContent;
+  updateStats(dataToRender);
 };
 
-renderProducts(products);
+// 3. STATISTIK SEDERHANA (reduce)
+const updateStats = (dataToRender) => {
+  const totalCount = dataToRender.reduce((total, product) => total + 1, 0);
+  productCountEl.textContent = `Total produk ditampilkan: ${totalCount}`;
+};
+
+// 4. FILTER KATEGORI (Bonus - dropdown dinamis)
+const populateCategoryOptions = (dataProducts) => {
+  const categories = [...new Set(dataProducts.map((product) => product.category))];
+
+  categories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    categoryFilter.appendChild(option);
+  });
+};
+
+// 5. FUNGSI GABUNGAN: SEARCH + FILTER KATEGORI
+const applyFilters = () => {
+  const keyword = searchInput.value.toLowerCase();
+  const selectedCategory = categoryFilter.value;
+
+  let filtered = products.filter((product) =>
+    product.title.toLowerCase().includes(keyword)
+  );
+
+  if (selectedCategory !== "all") {
+    filtered = filtered.filter((product) => product.category === selectedCategory);
+  }
+
+  renderProducts(filtered);
+};
+
+// 6. SORTING HARGA (Bonus)
+const toggleSort = () => {
+  const sorted = [...currentView].sort((a, b) =>
+    sortAscending ? a.price - b.price : b.price - a.price
+  );
+
+  sortAscending = !sortAscending;
+  sortButton.textContent = sortAscending
+    ? "Urutkan Harga: Termurah ➜ Termahal"
+    : "Urutkan Harga: Termahal ➜ Termurah";
+
+  renderProducts(sorted);
+};
+
+// EVENT LISTENERS
+searchInput.addEventListener("input", applyFilters);
+categoryFilter.addEventListener("change", applyFilters);
+sortButton.addEventListener("click", toggleSort);
+
+// JALANKAN APLIKASI
+fetchProducts();
